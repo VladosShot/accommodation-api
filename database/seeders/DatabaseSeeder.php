@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Property;
+use App\Models\Supplier;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -13,11 +15,30 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        Supplier::create([
+            'code' => 'supplier-a',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        Supplier::create([
+            'code' => 'supplier-b',
+        ]);
+
+        Property::create([
+            'code' => 'BCN-0001',
+            'name' => 'Hotel Barcelona Center',
+            'city' => 'Barcelona',
+        ]);
+
+        Property::create([
+            'code' => 'BCN-0002',
+            'name' => 'Barcelona Apartments',
+            'city' => 'Barcelona',
+        ]);
+
+        Property::create([
+            'code' => 'MAD-0001',
+            'name' => 'Madrid Grand Hotel',
+            'city' => 'Madrid',
         ]);
     }
 }
