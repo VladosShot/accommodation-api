@@ -1,66 +1,352 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Accommodation API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API for asynchronous accommodation offer imports, property search and offer reservations.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.2+
+- Composer
+- Docker
+- Docker Compose
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Clone the repository
 
-## Learning Laravel
+```bash
+git clone https://github.com/VladosShot/accommodation-api.git
+cd accommodation-api
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 2. Prepare Laravel directories
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Some runtime directories are intentionally excluded from Git.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+On Linux/macOS:
 
-## Laravel Sponsors
+```bash
+mkdir -p bootstrap/cache
+mkdir -p storage/framework/cache
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+mkdir -p storage/logs
+mkdir -p tests/Unit
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+On Windows PowerShell:
 
-### Premium Partners
+```powershell
+New-Item -ItemType Directory -Force -Path `
+    bootstrap/cache, `
+    storage/framework/cache, `
+    storage/framework/sessions, `
+    storage/framework/views, `
+    storage/logs, `
+    tests/Unit
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 3. Install PHP dependencies
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Configure environment
 
-## Code of Conduct
+Copy the example environment file:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+cp .env.example .env
+```
 
-## Security Vulnerabilities
+The project is configured to use the MySQL and Redis services provided by Docker Compose.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Default database configuration:
 
-## License
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=accommodation
+DB_USERNAME=laravel
+DB_PASSWORD=laravel
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Redis configuration:
+
+```env
+QUEUE_CONNECTION=redis
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+### 5. Generate application key
+
+```bash
+php artisan key:generate
+```
+
+### 6. Start Docker services
+
+```bash
+docker compose up -d
+```
+
+This starts:
+
+- MySQL 8.0
+- Redis
+
+Check service status:
+
+```bash
+docker compose ps
+```
+
+### 7. Run migrations and seeders
+
+```bash
+php artisan migrate --seed
+```
+
+The database seeder creates two suppliers:
+
+- `supplier-a`
+- `supplier-b`
+
+It also creates the following sample properties:
+
+- `BCN-0001` — Hotel Barcelona Center, Barcelona
+- `BCN-0002` — Barcelona Apartments, Barcelona
+- `MAD-0001` — Madrid Grand Hotel, Madrid
+
+## Queue Worker
+
+Imports are processed asynchronously using Laravel queues with Redis.
+
+Start a queue worker:
+
+```bash
+php artisan queue:work
+```
+
+Keep the queue worker running while testing imports.
+
+## Running Tests
+
+Run the full test suite:
+
+```bash
+php artisan test
+```
+
+The test suite covers:
+
+- import creation and validation;
+- import idempotency;
+- asynchronous import processing;
+- updating existing offers;
+- property search;
+- selecting the cheapest available offer;
+- excluding unavailable and expired offers;
+- successful reservations;
+- reservations when no units are available;
+- expired offers.
+
+## API
+
+### Create Import
+
+```http
+POST /api/imports
+Content-Type: application/json
+```
+
+Example request:
+
+```json
+{
+    "supplier": "supplier-a",
+    "external_import_id": "import-001",
+    "sent_at": "2026-09-10T10:00:00Z",
+    "offers": [
+        {
+            "external_id": "offer-001",
+            "property": {
+                "code": "BCN-0001",
+                "name": "Hotel Barcelona Center",
+                "city": "Barcelona"
+            },
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05",
+            "max_guests": 2,
+            "price": 72500,
+            "currency": "EUR",
+            "available_units": 3,
+            "expires_at": "2026-09-15T12:00:00Z"
+        }
+    ]
+}
+```
+
+The endpoint immediately returns `202 Accepted`:
+
+```json
+{
+    "data": {
+        "id": 1,
+        "status": "pending",
+        "total_offers": 1
+    }
+}
+```
+
+The actual offer processing is performed asynchronously by `ProcessImportJob`.
+
+### Get Import Status
+
+```http
+GET /api/imports/{import}
+```
+
+Returns the current import state, including:
+
+- supplier;
+- external import ID;
+- status;
+- total offers;
+- processed offers;
+- error;
+- creation and completion timestamps.
+
+Possible import statuses:
+
+- `pending`
+- `processing`
+- `completed`
+- `failed`
+
+### Search Properties
+
+```http
+GET /api/properties
+```
+
+Required parameters:
+
+```text
+check_in
+check_out
+guests
+```
+
+Optional parameter:
+
+```text
+city
+```
+
+Example:
+
+```text
+GET /api/properties?city=Barcelona&check_in=2026-10-01&check_out=2026-10-05&guests=2
+```
+
+The search returns only offers that:
+
+- match the requested dates;
+- support the requested number of guests;
+- have available units;
+- have not expired;
+- match the requested city, when provided.
+
+For each property, only the cheapest valid offer is returned.
+
+The cheapest offer is selected at the database level, and the results are paginated.
+
+### Reserve Offer
+
+```http
+POST /api/offers/{offer}/reservations
+Content-Type: application/json
+```
+
+Example:
+
+```json
+{
+    "client_reference": "booking-001",
+    "customer_name": "John Doe",
+    "customer_email": "john@example.com"
+}
+```
+
+Successful reservation returns `201 Created`.
+
+If the offer has no available units or has expired, the API returns `409 Conflict`.
+
+## Import Idempotency
+
+Imports are identified by the combination of:
+
+```text
+supplier + external_import_id
+```
+
+This combination is unique in the database.
+
+If the same import is submitted more than once:
+
+- a new import is not created;
+- the job is not dispatched again;
+- the existing import ID and current status are returned.
+
+Offers are similarly identified by:
+
+```text
+supplier + external_id
+```
+
+If an offer with the same external ID already exists for the supplier, it is updated instead of duplicated.
+
+Properties are identified by their external property code.
+
+## Reservation Concurrency
+
+Reservations are performed inside a database transaction.
+
+Before decreasing the number of available units, the offer row is locked using `SELECT ... FOR UPDATE` (`lockForUpdate()`).
+
+This ensures that concurrent transactions cannot reserve the same last available unit.
+
+The availability is checked again after acquiring the row lock. If no units remain, the reservation is rejected with `409 Conflict`.
+
+## Price Representation
+
+Offer prices are stored as integers in the smallest currency unit.
+
+For example:
+
+```text
+72500 EUR = €725.00
+```
+
+Using integers avoids floating-point precision problems when working with monetary values.
+
+## Project Structure
+
+The project follows a conventional Laravel structure:
+
+- `app/Http/Controllers` — API controllers
+- `app/Http/Requests` — request validation
+- `app/Http/Resources` — API response resources
+- `app/Jobs` — asynchronous import processing
+- `app/Models` — Eloquent models
+- `app/Enums` — import status enum
+- `database/migrations` — database schema
+- `database/seeders` — initial test data
+- `tests/Feature` — API and business-flow tests
+
+The implementation intentionally follows standard Laravel patterns without introducing unnecessary architectural layers.
